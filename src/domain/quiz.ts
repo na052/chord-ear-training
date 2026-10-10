@@ -41,14 +41,13 @@ export function generateQuestions(
   const pool = ROOTS.flatMap((root) =>
     qualitiesFor(difficulty).map((quality) => createChord(root, quality)),
   );
-  const recent: string[] = [];
+  const usedAnswers = new Set<string>();
   return Array.from({ length: QUESTION_COUNT }, (_, index) => {
     const eligible = pool.filter(
-      (chord) => !recent.includes(chord.displayName),
+      (chord) => !usedAnswers.has(chord.displayName),
     );
     const answer = eligible[Math.floor(random() * eligible.length)];
-    recent.push(answer.displayName);
-    if (recent.length > 3) recent.shift();
+    usedAnswers.add(answer.displayName);
     const sameRoot = shuffle(
       pool.filter(
         (chord) =>

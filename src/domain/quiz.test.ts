@@ -49,7 +49,7 @@ describe("question generation", () => {
     "intermediate",
     "advanced",
   ] as Difficulty[])
-    it(`${difficulty}: unique allowed options, root preference and no recent duplicates`, () => {
+    it(`${difficulty}: unique allowed options, root preference and no repeated answers within a session`, () => {
       let seed = 1234;
       const random = () =>
         (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32;
@@ -70,7 +70,7 @@ describe("question generation", () => {
           ).toHaveLength(difficulty === "beginner" ? 2 : 4);
           expect(
             questions
-              .slice(Math.max(0, i - 3), i)
+              .slice(0, i)
               .map((c) => c.answer.displayName),
           ).not.toContain(q.answer.displayName);
           positions.add(
@@ -80,8 +80,18 @@ describe("question generation", () => {
       }
       expect(positions.size).toBe(4);
     });
-  it("terminates even with a constant RNG", () =>
-    expect(generateQuestions("beginner", () => 0)).toHaveLength(10));
+  it("keeps all ten answers unique even with a constant RNG", () => {
+    const questions = generateQuestions("beginner", () => 0);
+    expect(questions).toHaveLength(10);
+    expect(new Set(questions.map((question) => question.answer.displayName)).size).toBe(10);
+  });
+  it("resets excluded answers for each new session", () => {
+    const first = generateQuestions("beginner", () => 0);
+    const second = generateQuestions("beginner", () => 0);
+    expect(second.map((question) => question.answer.displayName)).toEqual(
+      first.map((question) => question.answer.displayName),
+    );
+  });
 });
 it("counts each assisted question once, including reference tone", () => {
   const attempts: Attempt[] = Array.from({ length: 10 }, (_, i) => ({
